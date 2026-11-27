@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Генератор библиографии исторического факультета ИГУ</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 820px; margin: 36px auto; padding: 0 20px; line-height: 1.5; color: #222; }
+        h1 { font-size: 1.5rem; margin-bottom: 20px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.95rem; }
+        input, select, textarea { width: 100%; padding: 8px 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; font-size: 0.95rem; }
+        input[type="checkbox"] { width: auto; margin-right: 8px; }
+        .checkbox-label { display: flex; align-items: center; font-weight: 600; cursor: pointer; }
+        .field { display: none; }
+        .field.active { display: block; }
+        .person-row { display: flex; gap: 8px; margin-bottom: 6px; }
+        .person-row input { flex: 1; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+        button { cursor: pointer; padding: 9px 16px; background: #b30000; color: #fff; border: none; border-radius: 4px; font-size: 0.95rem; }
+        button:hover { background: #8f0000; }
+        .btn-secondary { background: #555; }
+        .btn-secondary:hover { background: #333; }
+        .btn-add { margin-top: 4px; background: #792423; padding: 5px 10px; font-size: 0.88rem; }
+        .btn-add:hover { background: #5d1b1a; }
+        .btn-remove { background: #dc3545; padding: 0 10px; }
+        .btn-remove:hover { background: #b02a37; }
+        .result-box { margin-top: 22px; padding: 15px; background: #f6f6f6; border-left: 4px solid #b30000; border-radius: 0 4px 4px 0; overflow-wrap: anywhere; }
+        .result-box p { margin: 8px 0 0; }
+        .result-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+        .copy-hint { font-size: 0.85rem; color: #198754; font-weight: 600; }
+        .batch-list { margin-top: 10px; font-size: 0.95rem; }
+        .batch-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #ddd; }
+        .batch-row:last-child { border-bottom: none; }
+        .batch-row-text { flex: 1; }
+        .batch-row-actions { display: flex; gap: 4px; flex-shrink: 0; }
+        .btn-icon { padding: 3px 8px; font-size: 0.85rem; }
+        .error-text { color: #b30000; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Генератор библиографии исторического факультета ИГУ</h1>
+
+    <form id="gostForm">
+        <div class="form-group">
+            <label for="type">Тип источника:</label>
+            <select id="type" name="type">
+                <option value="article-journal">Статья из журнала</option>
+                <option value="chapter">Статья из сборника / глава монографии</option>
+                <option value="book">Монография</option>
+                <option value="webpage">Интернет-ресурс / веб-страница</option>
+                <option value="paper-conference">Статья eLibrary / конференция</option>
+                <option value="thesis">Диссертация / автореферат</option>
+                <option value="article-newspaper">Статья из газеты</option>
+                <option value="archive">Архивный документ</option>
+                <option value="legislation">Нормативно-правовой акт (НПА)</option>
+            </select>
+        </div>
+
+        <div class="form-group field article-journal chapter book webpage paper-conference thesis article-newspaper">
+            <label for="language">Язык источника:</label>
+            <select id="language" name="language">
+                <option value="ru">Русский</option>
+                <option value="fr">Французский</option>
+                <option value="en">Английский</option>
+                <option value="de">Немецкий</option>
+            </select>
+        </div>
+
+        <div class="form-group field article-journal chapter book webpage paper-conference thesis article-newspaper">
+            <label>Авторы статьи / книги:</label>
+            <div id="authorsList">
+                <div class="person-row author-row">
+                    <input type="text" placeholder="Фамилия" class="author-family">
+                    <input type="text" placeholder="Имя / инициалы (напр. Д. Ю.)" class="author-given">
+                </div>
+            </div>
+            <button type="button" onclick="addPersonField('authorsList', 'author')" class="btn-add">+ Добавить автора</button>
+        </div>
+
+        <div class="form-group field book chapter webpage">
+            <label for="contributor">Коллективный / безличный автор (если нет физ. автора):</label>
+            <input type="text" id="contributor" placeholder="напр. Convention nationale">
+        </div>
+
+        <div class="form-group field book chapter">
+            <label>Редакторы:</label>
+            <div id="editorsList">
+                <div class="person-row editor-row">
+                    <input type="text" placeholder="Фамилия" class="editor-family">
+                    <input type="text" placeholder="Инициалы" class="editor-given">
+                </div>
+            </div>
+            <button type="button" onclick="addPersonField('editorsList', 'editor')" class="btn-add">+ Добавить редактора</button>
+        </div>
+
+        <div class="form-group field book chapter article-journal">
+            <label>Переводчики:</label>
+            <div id="translatorsList">
+                <div class="person-row translator-row">
+                    <input type="text" placeholder="Фамилия" class="translator-family">
+                    <input type="text" placeholder="Инициалы" class="translator-given">
+                </div>
+            </div>
+            <button type="button" onclick="addPersonField('translatorsList', 'translator')" class="btn-add">+ Добавить переводчика</button>
+        </div>
+
+        <div class="form-group field book chapter article-journal">
+            <label for="translation_language">Язык оригинала (в род. падеже, если есть переводчик):</label>
+            <input type="text" id="translation_language" placeholder="напр. французского, английского">
+        </div>
+
+        <div class="form-group field book chapter">
+            <label>Автор предисловия:</label>
+            <div id="prefaceAuthorsList">
+                <div class="person-row preface-row">
+                    <input type="text" placeholder="Фамилия" class="preface-family">
+                    <input type="text" placeholder="Инициалы" class="preface-given">
+                </div>
+            </div>
+            <button type="button" onclick="addPersonField('prefaceAuthorsList', 'preface')" class="btn-add">+ Добавить автора предисловия</button>
+        </div>
+
+        <div class="form-group field article-journal chapter book webpage paper-conference thesis article-newspaper legislation">
+            <label for="title">Название работы / документа / НПА:</label>
+            <input type="text" id="title">
+        </div>
+
+        <!-- Поля для архивных документов -->
+        <div class="form-group field archive">
+            <label for="archive_name">Название архива (полное или краткое - <strong>но лучше полное, не ленитесь)</strong>:</label>
+            <input type="text" id="archive_name" placeholder="напр. Государственный архив Иркутской области или РГИА">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_abbr">Аббревиатура архива (если выше полное название):</label>
+            <input type="text" id="archive_abbr" placeholder="напр. ГАИО">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_fond">Фонд (Ф.):</label>
+            <input type="text" id="archive_fond" placeholder="напр. 33 или И-2">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_opis">Опись (Оп.):</label>
+            <input type="text" id="archive_opis" placeholder="напр. 1">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_sub_unit">Год или картон (если есть между описью и делом):</label>
+            <input type="text" id="archive_sub_unit" placeholder="напр. 1826 или Картон 5">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_delo_type">Тип единицы хранения:</label>
+            <select id="archive_delo_type">
+                <option value="Д.">Д. (Дело)</option>
+                <option value="Ед. хр.">Ед. хр. (Единица хранения)</option>
+                <option value="№">№ (Номер)</option>
+            </select>
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_delo">Номер дела / единицы хранения:</label>
+            <input type="text" id="archive_delo" placeholder="напр. 108">
+        </div>
+
+        <div class="form-group field archive">
+            <label for="archive_list">Листы (Л.):</label>
+            <input type="text" id="archive_list" placeholder="напр. 23 или 18-19 об.">
+        </div>
+
+        <!-- Специальные поля для НПА -->
+        <div class="form-group field legislation">
+            <label for="law_type">Вид и дата/орган акта:</label>
+            <input type="text" id="law_type" placeholder="напр. Федеральный закон или закон СССР от 09.04.1990 г.">
+        </div>
+
+        <div class="form-group field legislation">
+            <label for="law_number">Номер акта (если не вписан выше):</label>
+            <input type="text" id="law_number" placeholder="напр. № 131-ФЗ">
+        </div>
+
+        <div class="form-group field legislation">
+            <label for="adoption_info">Сведения о принятии : одобрении:</label>
+            <input type="text" id="adoption_info" placeholder="напр. принят Государственной думой 16 сентября 2003 года : одобрен Советом Федерации 24 сентября 2003 года">
+        </div>
+
+        <div class="form-group field article-journal chapter webpage article-newspaper legislation">
+            <label for="container_title">Название журнала / сборника / сайта / газеты / СПС:</label>
+            <input type="text" id="container_title" placeholder="напр. Гарант : справочно-правовая система">
+        </div>
+
+        <div class="form-group field webpage">
+            <label for="site_type">Тип сайта (оставьте пустым для «[сайт]»):</label>
+            <input type="text" id="site_type" placeholder="напр. официальный сайт">
+        </div>
+
+        <div class="form-group field paper-conference">
+            <label for="event_title">Название журнала / конференции (eLibrary):</label>
+            <input type="text" id="event_title">
+        </div>
+
+        <div class="form-group field book chapter thesis legislation">
+            <label for="publisher">Издательство (или ВУЗ для диссертации):</label>
+            <input type="text" id="publisher">
+        </div>
+
+        <div class="form-group field book chapter thesis legislation">
+            <label for="publisher_place">Место издания (город полностью):</label>
+            <input type="text" id="publisher_place" placeholder="Москва (НЕ М.)">
+        </div>
+
+        <div class="form-group field book">
+            <label for="edition">Сведения об издании:</label>
+            <input type="text" id="edition" placeholder="напр. 2-е изд., испр.">
+        </div>
+
+        <div class="form-group field article-journal paper-conference book chapter thesis legislation">
+            <label for="year">Год издания:</label>
+            <input type="number" id="year" min="1000" max="2100">
+        </div>
+
+        <div class="form-group field webpage article-newspaper">
+            <label for="issued_exact">Дата публикации:</label>
+            <input type="date" id="issued_exact">
+        </div>
+
+        <div class="form-group field article-journal paper-conference article-newspaper">
+            <label for="issue">Номер (№):</label>
+            <input type="text" id="issue">
+        </div>
+
+        <div class="form-group field article-journal paper-conference book chapter legislation">
+            <label for="volume">Том / сквозной выпуск в скобках:</label>
+            <input type="text" id="volume" placeholder="напр. 13 или VI">
+        </div>
+
+        <div class="form-group field chapter book">
+            <label for="number_of_volumes">Количество томов многотомника:</label>
+            <input type="text" id="number_of_volumes" placeholder="напр. 2">
+        </div>
+
+        <div class="form-group field article-journal chapter paper-conference article-newspaper legislation">
+            <label for="page">Страницы (диапазон):</label>
+            <input type="text" id="page" placeholder="напр. 15-25">
+        </div>
+
+        <div class="form-group field book thesis legislation">
+            <label for="number_of_pages">Общее количество страниц:</label>
+            <input type="text" id="number_of_pages" placeholder="напр. 468">
+        </div>
+
+        <div class="form-group field book chapter legislation">
+            <label for="collection_title">Название серии (или многотомника):</label>
+            <input type="text" id="collection_title" placeholder="Библиотека ПостНауки">
+        </div>
+
+        <div class="form-group field chapter book">
+            <label for="isbn">ISBN:</label>
+            <input type="text" id="isbn" placeholder="978-5-91671-975-8">
+        </div>
+
+        <div class="form-group field article-journal paper-conference book">
+            <label for="doi">DOI:</label>
+            <input type="text" id="doi" placeholder="10.17212/2075-0862-2025-17.2.1-157-173">
+        </div>
+
+        <div class="form-group field webpage article-journal paper-conference chapter book article-newspaper legislation">
+            <label for="url">URL-ссылка:</label>
+            <input type="url" id="url" placeholder="https://...">
+        </div>
+
+        <div class="form-group field webpage article-journal paper-conference chapter book article-newspaper legislation">
+            <label for="accessed_date">Дата обращения:</label>
+            <input type="date" id="accessed_date">
+        </div>
+
+        <div class="form-group field legislation">
+            <label class="checkbox-label">
+                <input type="checkbox" id="repealed"> Акт утратил силу (добавить «– Утратил силу.»)
+            </label>
+        </div>
+
+        <div class="form-group field chapter paper-conference article-newspaper book article-journal legislation">
+            <label for="note">Дополнительно (над-раздел, EDN, примечание):</label>
+            <input type="text" id="note" placeholder="напр. EDN HWRHFP или Première partie. Quelle Grande Nation">
+        </div>
+
+        <div class="actions">
+            <button type="submit">Сгенерировать ссылку</button>
+            <button type="button" id="resetBtn" class="btn-secondary">Очистить форму</button>
+        </div>
+    </form>
+
+    <div id="result" class="result-box" style="display:none;">
+        <strong>Результат по ГОСТ:</strong>
+        <p id="citationOutput"></p>
+        <div class="result-actions">
+            <button type="button" id="copyBtn" class="btn-secondary">Скопировать</button>
+            <button type="button" id="addToListBtn" class="btn-add" style="margin-top:0;">+ В список литературы</button>
+            <span id="copyHint" class="copy-hint"></span>
+        </div>
+    </div>
+
+    <div id="batchBox" class="result-box" style="display:none;">
+        <strong>Список литературы (отсортирован: русские → иностранные):</strong>
+        <div id="batchOutput" class="batch-list"></div>
+        <div class="result-actions">
+            <button type="button" id="copyBatchBtn" class="btn-secondary">Скопировать весь список</button>
+            <button type="button" id="clearBatchBtn" class="btn-secondary">Очистить список</button>
+            <span id="batchHint" class="copy-hint"></span>
+        </div>
+    </div>
+
+    <script>
+        const typeSelect = document.getElementById('type');
+        const STORAGE_KEY = 'igu_gost_saved_items';
+        let savedItems = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+        let lastPayload = null;
+        let editingId = null;
+        let lastBatchText = '';
+
+        function persistItems() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(savedItems));
+        }
+
+        function updateFormFields() {
+            const currentType = typeSelect.value;
+            document.querySelectorAll('.field').forEach(field => {
+                field.classList.toggle('active', field.classList.contains(currentType));
+            });
+            // Обязательность title: для всех типов кроме archive (там главное — archive_name)
+            const titleEl = document.getElementById('title');
+            const archiveNameEl = document.getElementById('archive_name');
+            if (titleEl) titleEl.required = (currentType !== 'archive');
+            if (archiveNameEl) archiveNameEl.required = (currentType === 'archive');
+        }
+
+        typeSelect.addEventListener('change', updateFormFields);
+        updateFormFields();
+
+        function getValue(id) {
+            const el = document.getElementById(id);
+            if (!el) return '';
+            const parentField = el.closest('.field');
+            if (parentField && !parentField.classList.contains('active')) {
+                return '';
+            }
+            if (el.type === 'checkbox') {
+                return el.checked;
+            }
+            return el.value.trim();
+        }
+
+        function collectPersonsData(rowSelector, familyClass, givenClass) {
+            const persons = [];
+            document.querySelectorAll(rowSelector).forEach(row => {
+                const parentField = row.closest('.field');
+                if (parentField && !parentField.classList.contains('active')) {
+                    return;
+                }
+                const family = row.querySelector('.' + familyClass)?.value.trim() || '';
+                const given = row.querySelector('.' + givenClass)?.value.trim() || '';
+                if (family || given) {
+                    persons.push({ family, given });
+                }
+            });
+            return persons;
+        }
+
+        function addPersonField(containerId, prefix) {
+            const container = document.getElementById(containerId);
+            const row = document.createElement('div');
+            row.className = `person-row ${prefix}-row`;
+            row.innerHTML = `
+                <input type="text" placeholder="Фамилия" class="${prefix}-family">
+                <input type="text" placeholder="Инициалы" class="${prefix}-given">
+                <button type="button" onclick="this.parentElement.remove()" class="btn-remove">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function buildPayload() {
+            const payload = {
+                type: typeSelect.value,
+                language: getValue('language') || 'ru',
+                title: getValue('title'),
+                authors: collectPersonsData('.author-row', 'author-family', 'author-given'),
+                contributor: getValue('contributor'),
+                editors: collectPersonsData('.editor-row', 'editor-family', 'editor-given'),
+                translators: collectPersonsData('.translator-row', 'translator-family', 'translator-given'),
+                translation_language: getValue('translation_language'),
+                collection_editors: collectPersonsData('.preface-row', 'preface-family', 'preface-given'),
+                archive_name: getValue('archive_name'),
+                archive_abbr: getValue('archive_abbr'),
+                archive_fond: getValue('archive_fond'),
+                archive_opis: getValue('archive_opis'),
+                archive_sub_unit: getValue('archive_sub_unit'),
+                archive_delo_type: getValue('archive_delo_type'),
+                archive_delo: getValue('archive_delo'),
+                archive_list: getValue('archive_list'),
+                law_type: getValue('law_type'),
+                law_number: getValue('law_number'),
+                adoption_info: getValue('adoption_info'),
+                repealed: Boolean(getValue('repealed')),
+                container_title: getValue('container_title'),
+                site_type: getValue('site_type'),
+                event_title: getValue('event_title'),
+                publisher: getValue('publisher'),
+                publisher_place: getValue('publisher_place'),
+                edition: getValue('edition'),
+                year: getValue('year'),
+                volume: getValue('volume'),
+                issue: getValue('issue'),
+                number_of_volumes: getValue('number_of_volumes'),
+                page: getValue('page'),
+                number_of_pages: getValue('number_of_pages'),
+                collection_title: getValue('collection_title'),
+                isbn: getValue('isbn'),
+                doi: getValue('doi'),
+                url: getValue('url'),
+                accessed_date: getValue('accessed_date'),
+                note: getValue('note')
+            };
+
+            const exactDate = getValue('issued_exact');
+            if (exactDate) {
+                payload.issued = exactDate;
+            }
+            return payload;
+        }
+
+        document.getElementById('gostForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = buildPayload();
+            const resultBox = document.getElementById('result');
+            const output = document.getElementById('citationOutput');
+            document.getElementById('copyHint').textContent = '';
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+
+                if (response.ok && result.citation) {
+                    output.className = '';
+                    output.textContent = result.citation;
+                    lastPayload = payload;
+                } else {
+                    output.className = 'error-text';
+                    output.textContent = 'Ошибка: ' + (result.error || 'Не удалось сгенерировать ссылку');
+                    lastPayload = null;
+                }
+                resultBox.style.display = 'block';
+            } catch (err) {
+                output.className = 'error-text';
+                output.textContent = 'Ошибка сети или сервера: ' + err.message;
+                resultBox.style.display = 'block';
+            }
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            const currentType = typeSelect.value;
+            document.getElementById('gostForm').reset();
+            typeSelect.value = currentType;
+            updateFormFields();
+            ['authorsList', 'editorsList', 'translatorsList', 'prefaceAuthorsList'].forEach(id => {
+                const rows = document.getElementById(id).querySelectorAll('.person-row');
+                rows.forEach((row, i) => { if (i > 0) row.remove(); });
+            });
+            document.getElementById('result').style.display = 'none';
+            editingId = null;
+            lastPayload = null;
+            document.getElementById('addToListBtn').textContent = '+ В список литературы';
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const text = document.getElementById('citationOutput').textContent;
+            if (!text) return;
+            await navigator.clipboard.writeText(text);
+            document.getElementById('copyHint').textContent = 'Скопировано!';
+        });
+
+        function fillPersonsList(containerId, prefix, persons) {
+            const container = document.getElementById(containerId);
+            const list = (persons && persons.length) ? persons : [{ family: '', given: '' }];
+            container.innerHTML = '';
+            list.forEach((p, idx) => {
+                const row = document.createElement('div');
+                row.className = `person-row ${prefix}-row`;
+                row.innerHTML = `
+                    <input type="text" placeholder="Фамилия" class="${prefix}-family" value="${(p.family || '').replace(/"/g, '&quot;')}">
+                    <input type="text" placeholder="Инициалы" class="${prefix}-given" value="${(p.given || '').replace(/"/g, '&quot;')}">
+                    ${idx > 0 ? '<button type="button" onclick="this.parentElement.remove()" class="btn-remove">✕</button>' : ''}
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function loadItemIntoForm(id) {
+            const item = savedItems.find(x => x.id === id);
+            if (!item) return;
+
+            editingId = id;
+            typeSelect.value = item.type || 'book';
+            updateFormFields();
+            document.getElementById('language').value = item.language || 'ru';
+
+            fillPersonsList('authorsList', 'author', item.authors);
+            fillPersonsList('editorsList', 'editor', item.editors);
+            fillPersonsList('translatorsList', 'translator', item.translators);
+            fillPersonsList('prefaceAuthorsList', 'preface', item.collection_editors);
+
+            const scalarFields = [
+                'title', 'contributor', 'translation_language', 'container_title',
+                'site_type', 'event_title', 'publisher', 'publisher_place', 'edition',
+                'year', 'volume', 'issue', 'number_of_volumes', 'page',
+                'number_of_pages', 'collection_title', 'isbn', 'doi', 'url',
+                'accessed_date', 'note',
+                'archive_name', 'archive_abbr', 'archive_fond', 'archive_opis',
+                'archive_sub_unit', 'archive_delo_type', 'archive_delo', 'archive_list',
+                'law_type', 'law_number', 'adoption_info'
+            ];
+            scalarFields.forEach(fid => {
+                const el = document.getElementById(fid);
+                if (el) el.value = item[fid] || (fid === 'archive_delo_type' ? 'Д.' : '');
+            });
+            const repealedEl = document.getElementById('repealed');
+            if (repealedEl) repealedEl.checked = Boolean(item.repealed);
+
+            const issuedEl = document.getElementById('issued_exact');
+            if (issuedEl) issuedEl.value = item.issued || '';
+
+            document.getElementById('addToListBtn').textContent = 'Сохранить изменения в списке';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function removeItemFromList(id) {
+            savedItems = savedItems.filter(x => x.id !== id);
+            if (editingId === id) {
+                editingId = null;
+                document.getElementById('addToListBtn').textContent = '+ В список литературы';
+            }
+            persistItems();
+            await refreshBatchList();
+        }
+
+        async function refreshBatchList() {
+            const batchBox = document.getElementById('batchBox');
+            const batchOutput = document.getElementById('batchOutput');
+            if (!savedItems.length) {
+                batchBox.style.display = 'none';
+                lastBatchText = '';
+                return;
+            }
+
+            const response = await fetch('/generate/batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ items: savedItems, sort_russian_first: true, numbered: true })
+            });
+            const data = await response.json();
+            if (!response.ok || !Array.isArray(data.items)) return;
+
+            lastBatchText = data.citations.join('\n');
+            batchOutput.innerHTML = '';
+
+            data.items.forEach(entry => {
+                const row = document.createElement('div');
+                row.className = 'batch-row';
+
+                const textSpan = document.createElement('span');
+                textSpan.className = 'batch-row-text';
+                textSpan.textContent = `${entry.number}. ${entry.citation}`;
+
+                const actions = document.createElement('div');
+                actions.className = 'batch-row-actions';
+
+                const editBtn = document.createElement('button');
+                editBtn.type = 'button';
+                editBtn.className = 'btn-secondary btn-icon';
+                editBtn.title = 'Редактировать';
+                editBtn.textContent = '✎';
+                editBtn.onclick = () => loadItemIntoForm(entry.id);
+
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'btn-remove btn-icon';
+                delBtn.title = 'Удалить';
+                delBtn.textContent = '✕';
+                delBtn.onclick = () => removeItemFromList(entry.id);
+
+                actions.append(editBtn, delBtn);
+                row.append(textSpan, actions);
+                batchOutput.appendChild(row);
+            });
+
+            batchBox.style.display = 'block';
+        }
+
+        document.getElementById('addToListBtn').addEventListener('click', async () => {
+            if (!lastPayload) return;
+            const itemCopy = structuredClone(lastPayload);
+
+            if (editingId) {
+                itemCopy.id = editingId;
+                const idx = savedItems.findIndex(x => x.id === editingId);
+                if (idx !== -1) savedItems[idx] = itemCopy;
+                editingId = null;
+                document.getElementById('addToListBtn').textContent = '+ В список литературы';
+            } else {
+                itemCopy.id = crypto.randomUUID ? crypto.randomUUID() : `id_${Date.now()}_${Math.random()}`;
+                savedItems.push(itemCopy);
+            }
+
+            persistItems();
+            await refreshBatchList();
+        });
+
+        document.getElementById('copyBatchBtn').addEventListener('click', async () => {
+            if (!lastBatchText) return;
+            await navigator.clipboard.writeText(lastBatchText);
+            document.getElementById('batchHint').textContent = 'Список скопирован!';
+        });
+
+        document.getElementById('clearBatchBtn').addEventListener('click', () => {
+            savedItems = [];
+            editingId = null;
+            lastBatchText = '';
+            persistItems();
+            document.getElementById('addToListBtn').textContent = '+ В список литературы';
+            document.getElementById('batchOutput').innerHTML = '';
+            document.getElementById('batchHint').textContent = '';
+            document.getElementById('batchBox').style.display = 'none';
+        });
+
+        refreshBatchList();
+    </script>
+</body>
+</html>
